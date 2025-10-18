@@ -45,7 +45,10 @@ def main(args):
     dataset = torch.load(args.dataset, weights_only=False, map_location=device)
 
     # Compute loss difference
-    loss_diff = LOSS_DIFF[args.ssl](model1, model2, dataset, device).cpu()
+    loss_diff = torch.cat([
+        LOSS_DIFF[args.ssl](model1, model2, x, device)
+        for x in dataset
+    ])
 
     # Save
     output_dir = '/'.join(args.outfile.split('/')[:-1])

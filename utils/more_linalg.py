@@ -20,14 +20,14 @@ being one of the vectors to be projected. The desired output can be formulated a
 """
 
 
-def project_part_1(vectors, subspace):
+def project_part_1(vectors, subspace, device):
     # If subspace is a directory, load from there and do patch-by-patch multiplication
     if isinstance(subspace, str):
         idx = 0
         ret = []
         while os.path.exists(f"{subspace}/{idx}.pth"):
             ret.append(
-                torch.load(f"{subspace}/{idx}.pth", weights_only=False)
+                torch.load(f"{subspace}/{idx}.pth", weights_only=False, map_location=device)
                 @ vectors.T
             )
             idx += 1
@@ -38,7 +38,7 @@ def project_part_1(vectors, subspace):
         return subspace @ vectors.T
     
 
-def compute_GGT_inv(subspace, overwrite=True, cache=None):
+def compute_GGT_inv(subspace, device, overwrite=True, cache=None):
     # Use cache
     if not overwrite and (
         cache is not None and os.path.exists(cache)
@@ -56,8 +56,8 @@ def compute_GGT_inv(subspace, overwrite=True, cache=None):
             rows = []
             while os.path.exists(f"{subspace}/{jdx}.pth"):
                 rows.append(
-                    torch.load(f"{subspace}/{idx}.pth", weights_only=False)
-                    @ torch.load(f"{subspace}/{jdx}.pth", weights_only=False).T
+                    torch.load(f"{subspace}/{idx}.pth", weights_only=False, map_location=device)
+                    @ torch.load(f"{subspace}/{jdx}.pth", weights_only=False, map_location=device).T
                 )
                 jdx += 1
             ret.append(torch.cat(rows, dim=1))
@@ -82,7 +82,7 @@ def compute_GGT_inv(subspace, overwrite=True, cache=None):
     return ggt_inverse
 
 
-def project_part_2(subspace, ggt_inverse, intermediate):
+def project_part_2(subspace, ggt_inverse, intermediate, device):
     intermediate = ggt_inverse @ intermediate
 
     # If subspace is a directory, load from there and do patch-by-patch multiplication
@@ -92,7 +92,7 @@ def project_part_2(subspace, ggt_inverse, intermediate):
         ret = None
         while os.path.exists(f"{subspace}/{idx}.pth"):
             partial_subspace = torch.load(
-                f"{subspace}/{idx}.pth", weights_only=False
+                f"{subspace}/{idx}.pth", weights_only=False, map_location=device
             )
             N, _ = partial_subspace.shape
             if ret is None:
@@ -108,10 +108,10 @@ def project_part_2(subspace, ggt_inverse, intermediate):
         return subspace.T @ intermediate
 
 
-def project(vectors, subspace, overwrite=True, cache=None):
-    intermediate = project_part_1(vectors, subspace)
-    ggt_inverse = compute_GGT_inv(subspace, overwrite, cache)
-    ret = project_part_2(subspace, ggt_inverse, intermediate).T
+def project(vectors, subspace, device, overwrite=True, cache=None):
+    intermediate = project_part_1(vectors, subspace, device)
+    ggt_inverse = compute_GGT_inv(subspace, device, overwrite, cache)
+    ret = project_part_2(subspace, ggt_inverse, intermediate, device).T
     return ret
 
 

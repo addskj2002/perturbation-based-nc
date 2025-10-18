@@ -22,7 +22,7 @@ def in_space_perturb(
 
     # Project to orthogonal space
     new_perturbation = project(
-        perturbations, gradients, overwrite=overwrite, cache=cache
+        perturbations, gradients, device, overwrite=overwrite, cache=cache
     )
 
     # Normalize
@@ -53,7 +53,7 @@ def ortho_space_perturb(
 
     # Project to orthogonal space
     new_perturbation = perturbations - project(
-        perturbations, gradients, overwrite=overwrite, cache=cache
+        perturbations, gradients, device, overwrite=overwrite, cache=cache
     )
 
     # Normalize

@@ -37,34 +37,37 @@ def get_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
             return filedata["gradient"]
         
     # Setup directory if there will be too many gradients
-    loss = loss_fn(model, X, device).flatten()
-    N = len(loss)
-    step = 100
+    Ns = [len(loss_fn(model, single_batch, device).flatten()) for single_batch in X]
+    N = sum(Ns)
+    step = 50
     if N > step:
         output_dir_path = Path(f"{cache}_dir")
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
     # Compute the gradients
     gradients = []
-    for idx in tqdm(range(N)):
-        loss = loss_fn(model, X, device).flatten()[idx]
-        loss.backward()
-        gradient = []
-        for param_name, params in model.named_parameters():
-            new_gradient = params.grad
-            # print(new_gradient)
-            gradient.append(new_gradient.flatten())
-        model.zero_grad()
-        X.requires_grad_(requires_grad=False)
-        gradient = torch.cat(gradient)
-        gradients.append(gradient)
-        if (idx + 1) % step == 0:
-            torch.save(torch.stack(gradients), f"{cache}_dir/{idx//step}.pth")
-            gradients = []
+    kdx = 0
+    for idx, single_N in enumerate(Ns):
+        for jdx in tqdm(range(single_N)):
+            loss = loss_fn(model, X[idx], device).flatten()[jdx]
+            loss.backward()
+            gradient = []
+            for param_name, params in model.named_parameters():
+                new_gradient = params.grad
+                gradient.append(new_gradient.flatten())
+            model.zero_grad()
+            X[idx].requires_grad_(requires_grad=False)
+            gradient = torch.cat(gradient).to("cpu")
+            gradients.append(gradient)
+            if (kdx + 1) % step == 0:
+                temp = torch.stack(gradients)
+                torch.save(temp, f"{cache}_dir/{kdx//step}.pth")
+                gradients = []
+            kdx += 1
+            torch.cuda.empty_cache()
     if len(gradients) > 0:
         gradients = torch.stack(gradients)
-    if N > step and (idx + 1) % step != 0:
-        torch.save(gradients, f"{cache}_dir/{idx//step}.pth")
+        torch.save(gradients, f"{cache}_dir/{kdx//step}.pth")
 
     # Returns a directory name if we have too many gradients
     if N > step:

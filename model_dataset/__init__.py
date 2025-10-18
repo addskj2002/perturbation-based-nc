@@ -138,12 +138,16 @@ def get_perturbation_input(
             sampled_idxs += random.sample(
                 idxs, sample_size // len(label_to_idxs) + (1 if label in overflows else 0)
             )
+        random.shuffle(sampled_idxs)
     
     # Choose randomly
     else:
         sampled_idxs = random.sample(range(len(dataset)), sample_size)
 
-    return tensorized_input[sampled_idxs]
+    return [
+        tensorized_input[sampled_idxs[jdx*50:(jdx+1)*50]]
+        for jdx in range(1 + (sample_size - 1) // 50)
+    ]
 
 
 def save_model(model, filename, ssl, arch):

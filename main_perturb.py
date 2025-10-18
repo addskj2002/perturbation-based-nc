@@ -50,7 +50,8 @@ def main(args):
     embedding_model = get_model(args.original_model, args.ssl, args.arch)
     embedding_model.eval()
     embedding_model.to(device)
-    pert_inputs = torch.load(args.inputs, weights_only=False).to(device)
+    pert_inputs = torch.load(args.inputs, weights_only=False)
+    pert_inputs = [x.to(device) for x in pert_inputs]
     generator = (
         torch.manual_seed(args.seed)
         if args.seed is not None else torch.Generator()
