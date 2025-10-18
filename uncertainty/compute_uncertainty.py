@@ -14,7 +14,7 @@ def compute_dist_uncertainty(X, Y, k=100, metric='cosine'):
     return knn_dist.mean(dim=1)
 
 def compute_knn_idxs(X, Y, k=100, metric='cosine'):
-    distances = compute_distance(X, Y, metric=metric).squeeze(0)
+    distances = compute_distance(X.to('cpu'), Y.to('cpu'), metric=metric).squeeze(0)
     _, knn_idxs = torch.topk(distances, k=k, largest=False, dim=1)
     return [set(idxs.tolist()) for idxs in knn_idxs]
 
