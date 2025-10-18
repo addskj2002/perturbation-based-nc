@@ -1,6 +1,7 @@
 
+import torch
 from torch.utils.data import Dataset
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 
 
 class TinyImageNetDataset(Dataset):
@@ -11,7 +12,7 @@ class TinyImageNetDataset(Dataset):
 
         self.images = []
         self.labels = []
-        tiny_imagenet = load_dataset('Maysee/tiny-imagenet', split='train' if self.train else 'valid')
+        tiny_imagenet = load_from_disk(f"data/imagenet32-{'train' if train else 'test'}")
         for data in tiny_imagenet:
             self.images.append(data['image'].convert('RGB').resize((self.img_size, self.img_size)))
             self.labels.append(data['label'])
