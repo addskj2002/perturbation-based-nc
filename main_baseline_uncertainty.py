@@ -4,10 +4,25 @@ import json
 from pathlib import Path
 
 import torch
+import numpy as np
 
 from model_dataset import get_model, get_dataset
-from uncertainty import compute_norm_uncertainty, compute_dist_uncertainty
+from uncertainty import (
+    compute_norm_uncertainty,
+    compute_dist_uncertainty,
+    compute_ll_uncertainty,
+    compute_fv_uncertainty,
+)
 from utils import infer
+
+
+N_PRETRAIN = {
+    "cifar10": 50_000,
+    "cifar100": 50_000,
+    "imagenet32": 100_000,
+    "stl10": 5_000,
+}
+METRICS = ["cosine", "euclidean"]
 
 
 def get_args_parser():
@@ -26,6 +41,7 @@ def get_args_parser():
 
     # Uncertainty configurations
     parser.add_argument('--k-list', type=str, default=None)
+    parser.add_argument('--n-ref', type=int, default=5_000)
 
     # Output file
     parser.add_argument('--outfile', type=str)
@@ -50,7 +66,11 @@ def main(args):
 
     # Get uncertainties
     print("Getting inference")
-    Xs = [infer(model, dataset[args.pretrain, True][0].to(device)) for model in models]
+    ref_idx = np.random.choice(N_PRETRAIN[args.pretrain], size=args.n_ref, replace=False)
+    Xs = [
+        infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
+        for model in models
+    ]
     Ys = [infer(model, dataset[args.downstream, False][0].to(device)) for model in models]
     k_list = [1, 100]
     if args.k_list is not None:
@@ -59,13 +79,20 @@ def main(args):
     print("Computing uncertainties")
     uncertainties = {
         'norm': compute_norm_uncertainty(Ys[0]),
-        'dist_cosine': {
-            k: compute_dist_uncertainty(Xs[0], Ys[0], k=k, metric='cosine')
-            for k in k_list
+        'll': {
+            metric: compute_ll_uncertainty(Xs[0], Ys[0], metric=metric)
+            for metric in METRICS
         },
-        'dist_euclidean': {
-            k: compute_dist_uncertainty(Xs[0], Ys[0], k=k, metric='euclidean')
-            for k in k_list
+        'fv': {
+            metric: compute_fv_uncertainty(Ys, metric=metric)
+            for metric in METRICS
+        },
+        'dist': {
+            metric: {
+                k: compute_dist_uncertainty(Xs[0], Ys[0], k=k, metric=metric)
+                for k in k_list
+            }
+            for metric in METRICS
         },
     }
 
