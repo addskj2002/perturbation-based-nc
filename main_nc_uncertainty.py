@@ -4,10 +4,19 @@ import json
 from pathlib import Path
 
 import torch
+import numpy as np
 
 from model_dataset import get_model, get_dataset
 from uncertainty import compute_nc_uncertainty
 from utils import infer
+
+
+N_PRETRAIN = {
+    "cifar10": 50_000,
+    "cifar100": 50_000,
+    "imagenet32": 100_000,
+    "stl10": 5_000,
+}
 
 
 def get_args_parser():
@@ -28,6 +37,7 @@ def get_args_parser():
     # Uncertainty configurations
     parser.add_argument('-k', type=int, default=100)
     parser.add_argument('--metric', type=str, default="cosine")
+    parser.add_argument('--n-ref', type=int, default=5_000)
 
     # Output file
     parser.add_argument('--outfile', type=str)
@@ -55,7 +65,11 @@ def main(args):
 
     # Get uncertainties
     print("Getting inference")
-    Xs = [infer(model, dataset[args.pretrain, True][0].to(device)) for model in models]
+    ref_idx = np.random.choice(N_PRETRAIN[args.pretrain], size=args.n_ref, replace=False)
+    Xs = [
+        infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
+        for model in models
+    ]
     Ys = [infer(model, dataset[args.downstream, False][0].to(device)) for model in models]
     print("Computing uncertainties")
     uncertainties = compute_nc_uncertainty(Xs, Ys, k=args.k, metric=args.metric)
