@@ -5,7 +5,22 @@ from pathlib import Path
 import torch
 
 from model_dataset import get_model, get_dataset
-from utils import train_logistic_regression, evaluate_logistic_regression, infer
+from utils import (
+    train_binary_logistic_regression,
+    evaluate_binary_logistic_regression,
+    train_multi_logistic_regression,
+    evaluate_multi_logistic_regression,
+    infer,
+)
+
+TRAIN = {
+    "binary": train_binary_logistic_regression,
+    "multi": train_multi_logistic_regression,
+}
+EVAL = {
+    "binary": evaluate_binary_logistic_regression,
+    "multi": evaluate_multi_logistic_regression,
+}
 
 def get_args_parser():
     # Parse
@@ -19,6 +34,9 @@ def get_args_parser():
 
     # Dataset name
     parser.add_argument('--dataset', type=str)
+
+    # Task type
+    parser.add_argument('--task', type=str)
 
     # Output filename
     parser.add_argument('--outfile', type=str)
@@ -39,9 +57,9 @@ def main(args):
 
     # Train and evaluate on test
     print("Training prediction head")
-    prediction_head = train_logistic_regression(infer(embedding_model, train_X), train_y)
+    prediction_head = TRAIN[args.task](infer(embedding_model, train_X), train_y)
     print("Evaluating on test set")
-    results = evaluate_logistic_regression(
+    results = EVAL[args.task](
         prediction_head, infer(embedding_model, test_X), test_y
     )
 

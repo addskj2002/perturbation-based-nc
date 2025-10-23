@@ -1,5 +1,10 @@
 
-from utils.downstream import train_logistic_regression, evaluate_logistic_regression
+from utils.downstream import (
+    train_binary_logistic_regression,
+    evaluate_binary_logistic_regression,
+    train_multi_logistic_regression,
+    evaluate_multi_logistic_regression,
+)
 from utils.perturbation import perturb
 from utils.inference import infer
 from utils.loss import (
