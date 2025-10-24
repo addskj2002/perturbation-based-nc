@@ -23,7 +23,7 @@ def compute_knn_idxs(X, Y, k=100, metric='cosine'):
 def compute_fv_uncertainty(Ys, metric='cosine'):
     if metric == "cosine":
         Ys = [Y / Y.norm(dim=1, keepdim=True) for Y in Ys]
-    return torch.var(torch.stack(Ys), dim=0).sum(dim=-1)
+    return torch.var(torch.stack(Ys), dim=0, correction=0).sum(dim=-1)
 
 def compute_ll_uncertainty(X, Y, n_clusters=20, max_iters=30, metric='cosine'):
     kernel = (
@@ -48,11 +48,12 @@ def compute_nc_uncertainty(Xs, Ys, k=100, metric='cosine'):
     knn_idxs = [compute_knn_idxs(X, Y, k=k, metric=metric) for X, Y in tqdm(zip(Xs, Ys))]
     return torch.tensor([sum([
         (
-            len(knn_idxs[0][jdx].intersection(knn_idxs[idx][jdx])) /
-            len(knn_idxs[0][jdx].union(knn_idxs[idx][jdx]))
+            len(knn_idxs[kdx][jdx].intersection(knn_idxs[idx][jdx])) /
+            len(knn_idxs[kdx][jdx].union(knn_idxs[idx][jdx]))
         ) # Jaccard index
-        for idx in range(1, N)
-    ]) / (N - 1) for jdx in range(M)])
+        for idx in range(N)
+        for kdx in range(idx+1, N)
+    ]) / (N * (N - 1) / 2) for jdx in range(M)])
 
 if __name__ == "__main__":
     pass

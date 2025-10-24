@@ -2,9 +2,9 @@
 import torch
 
 def compute_cosine_distance(X, Y):
-    X /= X.norm(dim=1, keepdim=True).clamp(min=1e-8)
-    Y /= Y.norm(dim=1, keepdim=True).clamp(min=1e-8)
-    dist = 1 - Y @ X.T
+    X_normalized = X / X.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    Y_normalized = Y / Y.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    dist = 1 - Y_normalized @ X_normalized.T
     return dist.clamp(min=0)
 
 def compute_euclidean_distance(X, Y):

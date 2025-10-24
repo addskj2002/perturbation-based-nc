@@ -42,6 +42,7 @@ def get_args_parser():
     # Uncertainty configurations
     parser.add_argument('--k-list', type=str, default=None)
     parser.add_argument('--n-ref', type=int, default=5_000)
+    parser.add_argument('--seed', type=int, default=0)
 
     # Output file
     parser.add_argument('--outfile', type=str)
@@ -66,6 +67,7 @@ def main(args):
 
     # Get uncertainties
     print("Getting inference")
+    np.random.seed(args.seed)
     ref_idx = np.random.choice(N_PRETRAIN[args.pretrain], size=args.n_ref, replace=False)
     Xs = [
         infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
