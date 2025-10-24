@@ -5,7 +5,6 @@ import argparse
 from sklearn.linear_model import LogisticRegression
 import torch
 
-EPS = 1e-10
 
 def train_multi_logistic_regression(X_train, y_train):
     model = LogisticRegression(random_state=1234, max_iter=20)
@@ -13,6 +12,8 @@ def train_multi_logistic_regression(X_train, y_train):
     return model
 
 def train_binary_logistic_regression(X_train, y_train):
+    # print("data:", X_train, y_train)
+    torch.save(X_train, "X.pth")
     n_unique = len(torch.unique(y_train))
     models = {}
     for idx in range(n_unique):
@@ -51,10 +52,10 @@ def evaluate_binary_logistic_regression(models, X_test, y_test):
         for jdx in range(idx+1, n_unique):
             idx_proba = torch.tensor(
                 models[idx, jdx].predict_proba(X_test[y_test == idx])[:, 0]
-            )
+            ).to(torch.float32)
             jdx_proba = torch.tensor(
                 models[idx, jdx].predict_proba(X_test[y_test == jdx])[:, 1]
-            )
+            ).to(torch.float32)
             probabilities[y_test == idx, jdx] = idx_proba
             probabilities[y_test == jdx, idx] = jdx_proba
 
@@ -65,7 +66,7 @@ def evaluate_binary_logistic_regression(models, X_test, y_test):
     log2_prob[probabilities == 0.0] = 0.0
     log2_err[probabilities == 1.0] = 0.0
     cross_entropy = -log2_prob.sum(dim=1) / (n_unique - 1)
-    pred_entropy = -(probabilities * log2prob + (1 - probabilities) * log2_err).sum(dim=1)
+    pred_entropy = -(probabilities * log2_prob + (1 - probabilities) * log2_err).sum(dim=1) / (n_unique - 1)
 
     return {
         'probability': probabilities,

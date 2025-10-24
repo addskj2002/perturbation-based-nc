@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 import torch
+import numpy as np
 
 from model_dataset import get_model, get_dataset
 from utils import (
