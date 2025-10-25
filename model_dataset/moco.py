@@ -34,7 +34,7 @@ def save_model(model, filename):
         K=4096,
         m=0.99,
         T=0.1,
-        arch=args.arch,
+        arch=arch,
         bn_splits=8,
         symmetric=False,
     )
