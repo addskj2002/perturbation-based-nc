@@ -4,6 +4,8 @@ from pathlib import Path
 
 import torch
 import numpy as np
+import warnings
+from sklearn.exceptions import ConvergenceWarning
 
 from model_dataset import get_model, get_dataset
 from utils import (
@@ -14,6 +16,7 @@ from utils import (
     infer,
 )
 
+warnings.filterwarnings('ignore', category=ConvergenceWarning)
 TRAIN = {
     "binary": train_binary_logistic_regression,
     "multi": train_multi_logistic_regression,

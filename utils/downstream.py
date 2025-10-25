@@ -12,8 +12,6 @@ def train_multi_logistic_regression(X_train, y_train):
     return model
 
 def train_binary_logistic_regression(X_train, y_train):
-    # print("data:", X_train, y_train)
-    torch.save(X_train, "X.pth")
     n_unique = len(torch.unique(y_train))
     models = {}
     for idx in range(n_unique):
