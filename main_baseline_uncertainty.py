@@ -81,10 +81,10 @@ def main(args):
     print("Computing uncertainties")
     uncertainties = {
         'norm': compute_norm_uncertainty(Ys[0]),
-        'll': {
-            metric: compute_ll_uncertainty(Xs[0], Ys[0], metric=metric)
-            for metric in METRICS
-        },
+        # 'll': {
+        #     metric: compute_ll_uncertainty(Xs[0], Ys[0], metric=metric)
+        #     for metric in METRICS
+        # },
         'fv': {
             metric: compute_fv_uncertainty(Ys, metric=metric)
             for metric in METRICS
