@@ -25,7 +25,7 @@ EVAL = {
     "binary": evaluate_binary_logistic_regression,
     "multi": evaluate_multi_logistic_regression,
 }
-COARSE_LABELS = np.array([4, 1, 14, 8, 0, 6, 7, 7, 18, 3,
+COARSE_LABELS = torch.tensor([4, 1, 14, 8, 0, 6, 7, 7, 18, 3,
     3, 14, 9, 18, 7, 11, 3, 9, 7, 11,
     6, 11, 5, 10, 7, 6, 13, 15, 3, 15,
     0, 11, 1, 10, 12, 14, 16, 9, 11, 5,
