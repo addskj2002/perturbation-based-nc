@@ -1,7 +1,12 @@
 
+import numpy as np
+
 from utils import perturb, infer
 from uncertainty import compute_nc_uncertainty
 
+
+np.random.seed(1234)
+SAMPLE_SIZE = 5000
 DEFAULT_STDDEVS = [
     1e-6 * (10 ** (idx / 4)) for idx in range(25)
 ]
@@ -28,12 +33,17 @@ def tuned_perturb(model, num_perturb, method, trainset, device, stddevs=None, lo
         )
         # Evaluate uncertainty
         embeddings = [infer(model, trainset)] + [infer(m, trainset) for m in models]
-        uncertainties = compute_nc_uncertainty(embeddings, embeddings, k=k, metric=metric)
+        ref_idx = np.random.choice(
+            embeddings[0].shape[0], size=SAMPLE_SIZE, replace=False
+        )
+        uncertainties = compute_nc_uncertainty(
+            [emb[ref_idx] for emb in embeddings], embeddings, k=k, metric=metric
+        )
         # Take highest spread in uncertainty
         unc_stddev = uncertainties.std().item()
         if unc_stddev > best_unc_stddev:
             best_unc_stddev = unc_stddev
             best_perts = models
     
-    return best_perts
+    return best_perts, best_unc_stddev
     

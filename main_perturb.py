@@ -86,7 +86,7 @@ def main(args):
             with open(args.stddev_list, 'r') as f:
                 stddevs = json.load(f)
         # Get ensemble
-        models = tuned_perturb(
+        models, unc_stddev = tuned_perturb(
             embedding_model,
             args.n_ens,
             args.method,
@@ -103,6 +103,7 @@ def main(args):
         )
         for idx, model in enumerate(models):
             save_model(model, f"{args.outdir}/{idx}.pth", args.ssl, args.arch)
+        torch.save(unc_stddev, f"{args.outdir}/stddev.pth")
 
 
 
