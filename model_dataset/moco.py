@@ -38,7 +38,7 @@ def save_model(model, filename, arch):
         bn_splits=8,
         symmetric=False,
     )
-    wrapper.encoder_q.net = model
+    wrapper.encoder_q.net = model.net
     torch.save(wrapper.state_dict(), filename)
 
 def get_transform():
