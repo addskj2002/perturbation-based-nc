@@ -172,4 +172,4 @@ def save_model(model, filename, ssl, arch):
     elif ssl == "simclr":
         save_model_simclr(model, filename, arch)
     elif ssl == "moco":
-        save_model_moco(model, filename)
+        save_model_moco(model, filename, arch)

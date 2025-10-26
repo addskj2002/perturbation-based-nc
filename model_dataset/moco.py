@@ -28,7 +28,7 @@ def get_model(filename, arch):
 
     return encoder_
 
-def save_model(model, filename):
+def save_model(model, filename, arch):
     wrapper = ModelMoCo(
         dim=128,
         K=4096,
