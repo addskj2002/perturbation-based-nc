@@ -31,7 +31,7 @@ def get_args_parser():
     parser.add_argument('--method', type=str)
     parser.add_argument('--stddev', type=float, default=None)
     parser.add_argument('--stddev-list', type=str, default=None)
-    parser.add_argument('--inputs', type=str)
+    parser.add_argument('--inputs', type=str, default=None)
     parser.add_argument('--cache', type=str, default=None)
     parser.add_argument('--overwrite', action='store_true')
     parser.add_argument('--seed', type=int, default=None)
@@ -50,8 +50,11 @@ def main(args):
     embedding_model = get_model(args.original_model, args.ssl, args.arch)
     embedding_model.eval()
     embedding_model.to(device)
-    pert_inputs = torch.load(args.inputs, weights_only=False)
-    pert_inputs = [x.to(device) for x in pert_inputs]
+    if args.inputs is not None:
+        pert_inputs = torch.load(args.inputs, weights_only=False)
+        pert_inputs = [x.to(device) for x in pert_inputs]
+    else:
+        pert_inputs = None
     generator = (
         torch.manual_seed(args.seed)
         if args.seed is not None else torch.Generator()
@@ -86,7 +89,7 @@ def main(args):
             with open(args.stddev_list, 'r') as f:
                 stddevs = json.load(f)
         # Get ensemble
-        models, unc_stddev = tuned_perturb(
+        models, stddev_dict = tuned_perturb(
             embedding_model,
             args.n_ens,
             args.method,
@@ -103,7 +106,7 @@ def main(args):
         )
         for idx, model in enumerate(models):
             save_model(model, f"{args.outdir}/{idx}.pth", args.ssl, args.arch)
-        torch.save(unc_stddev, f"{args.outdir}/stddev.pth")
+        torch.save(stddev_dict, f"{args.outdir}/stddev_dict.pth")
 
 
 
