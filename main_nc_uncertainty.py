@@ -33,6 +33,7 @@ def get_args_parser():
 
     # Downstream task name
     parser.add_argument('--downstream', type=str)
+    parser.add_argument('--train', action='store_true')
 
     # Uncertainty configurations
     parser.add_argument('-k', type=int, default=100)
@@ -61,7 +62,7 @@ def main(args):
         new_model.to(device)
         models.append(new_model)
     dataset = get_dataset(
-        args.ssl, args.pretrain, [(args.pretrain, True), (args.downstream, False)]
+        args.ssl, args.pretrain, [(args.pretrain, True), (args.downstream, args.train)]
     )
 
     # Get uncertainties
@@ -72,7 +73,7 @@ def main(args):
         infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
         for model in models
     ]
-    Ys = [infer(model, dataset[args.downstream, False][0].to(device)) for model in models]
+    Ys = [infer(model, dataset[args.downstream, args.train][0].to(device)) for model in models]
     print("Computing uncertainties")
     uncertainties = compute_nc_uncertainty(Xs, Ys, k=args.k, metric=args.metric)
 
