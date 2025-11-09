@@ -2,7 +2,7 @@
 import torch
 
 from utils.params import params_to_model, model_to_params
-from utils.gradients import get_gradients
+from utils.gradients import get_gradients, yield_gradients
 from utils.more_linalg import project
 
 EPS = 1e-10
@@ -69,6 +69,40 @@ def ortho_space_perturb(
     ]
 
 
+def gradient_inverse_perturb(
+    model, stddev, num_perturb, device, loss_fn, inputs, cache=None, overwrite=True, generator=None
+):
+
+    # Get gradient second moment
+    second_moment = None
+    N = 0
+    for grad in yield_gradients(
+        inputs, model, loss_fn, device, overwrite=overwrite, cache=cache
+    ):
+        if second_moment is None:
+            second_moment = torch.zeros(grad.shape[0])
+        second_moment += grad ** 2
+        N += 1
+    second_moment /= N
+    desired_vars = 1 / second_moment
+    desired_vars[torch.isnan(desired_vars) | torch.isinf(desired_vars)] = 0.0
+    desired_vars /= desired_vars.sum()
+    desired_stddev = stddev * (desired_vars ** 0.5)
+    desired_stddev = torch.stack([desired_stddev for _ in range(num_perturb)])
+    
+    # Perturb parameters
+    params = model_to_params(model)
+    perturbations = torch.normal(
+        mean=0.0, std=desired_stddev.to("cpu"), generator=generator
+    ).to(device)
+
+    # Insert to models
+    new_params = params.reshape(1, -1) + perturbations
+    return [
+        params_to_model(model, new_params[idx]) for idx in range(num_perturb)
+    ]
+
+
 def random_perturb(model, stddev, num_perturb, device, generator=None):
     # Perturb parameters
     params = model_to_params(model)
@@ -97,3 +131,7 @@ def perturb(
             )
         case "random":
             return random_perturb(model, stddev, num_perturb, device, generator)
+        case "gradinv":
+            return gradient_inverse_perturb(
+                model, stddev, num_perturb, device, loss_fn, inputs, cache=cache, overwrite=overwrite, generator=generator
+            )
