@@ -70,7 +70,7 @@ def main(args):
     np.random.seed(args.seed)
     ref_idx = np.random.choice(N_PRETRAIN[args.pretrain], size=args.n_ref, replace=False)
     Xs = [
-        infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
+        infer(model, dataset[args.pretrain, True][0][ref_idx].to(device))
         for model in models
     ]
     Ys = [infer(model, dataset[args.downstream, args.train][0].to(device)) for model in models]
