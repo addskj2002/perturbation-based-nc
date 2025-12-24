@@ -1,4 +1,6 @@
 
+import os
+
 import torch
 
 from utils.params import params_to_model, model_to_params
@@ -74,19 +76,35 @@ def gradient_inverse_perturb(
 ):
 
     # Get gradient second moment
-    second_moment = None
-    N = 0
-    for grad in yield_gradients(
-        inputs, model, loss_fn, device, overwrite=overwrite, cache=cache
-    ):
-        if second_moment is None:
-            second_moment = torch.zeros(grad.shape[0])
-        second_moment += grad ** 2
-        N += 1
-    second_moment /= N
-    desired_vars = 1 / second_moment
-    desired_vars[torch.isnan(desired_vars) | torch.isinf(desired_vars)] = 0.0
-    desired_vars /= desired_vars.sum()
+    cache_recovered = False
+    if not overwrite and (cache is not None) and os.path.exists(cache):
+        data = torch.load(cache, weights_only=False)
+        if "desired_vars" in data:
+            desired_vars = data["desired_vars"]
+            cache_recovered = True
+    
+    if not cache_recovered:
+        print("Cache not hit")
+        second_moment = None
+        N = 0
+        for grad in yield_gradients(
+            inputs, model, loss_fn, device, save=False, overwrite=overwrite, cache=cache
+        ):
+            if second_moment is None:
+                second_moment = torch.zeros(grad.shape[0]).to(device)
+            second_moment += grad.to(device) ** 2
+            N += 1
+        second_moment /= N
+        second_moment[second_moment < EPS] = 0.0
+        desired_vars = 1 / second_moment
+        valid_entries = ~(torch.isnan(desired_vars) | torch.isinf(desired_vars))
+        desired_vars[~valid_entries] = 0.0
+        desired_vars *= (len(desired_vars[valid_entries]) / desired_vars.sum())
+        if cache is not None:
+            data = {} if not os.path.exists(cache) else torch.load(cache, weights_only=False)
+            data["desired_vars"] = desired_vars
+            torch.save(data, cache)
+        
     desired_stddev = stddev * (desired_vars ** 0.5)
     desired_stddev = torch.stack([desired_stddev for _ in range(num_perturb)])
     

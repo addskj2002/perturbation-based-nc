@@ -6,7 +6,7 @@ from utils.downstream import (
     evaluate_multi_logistic_regression,
 )
 from utils.perturbation import perturb
-from utils.inference import infer
+from utils.inference import infer, is_stable
 from utils.loss import (
     get_simclr_loss,
     get_byol_loss,

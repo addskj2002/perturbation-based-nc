@@ -7,7 +7,7 @@ import torch
 from torch.func import functional_call, vmap, grad
 
 
-def yield_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
+def yield_gradients(X, model, loss_fn, device, save=True, overwrite=True, cache=None):
     """
     Yielding the individual gradients for each of the sample, given the model and the loss
     function
@@ -19,6 +19,7 @@ def yield_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
     - overwrite : If True, perform gradient computation. Otherwise, extract gradient from
                 filename if filename exists. In the case that filename does not exists,
                 perform the computation anyway
+    - save      : If True, save the gradients
     - cache     : String representing where we could extract the memoized gradients. If
                 overwrite is True or filename doesn't exist, this will be the destination
                 where the gradient will be saved
@@ -26,7 +27,7 @@ def yield_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
     Yields:
     The gradients one vector at a time
     """
-
+    
     # Caching
     if (not overwrite) and (
         (cache is not None) and os.path.exists(cache)
@@ -71,21 +72,23 @@ def yield_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
             gradients.append(gradient)
             if (kdx + 1) % step == 0:
                 temp = torch.stack(gradients)
-                torch.save(temp, f"{cache}_dir/{kdx//step}.pth")
+                if save:
+                    torch.save(temp, f"{cache}_dir/{kdx//step}.pth")
                 gradients = []
             kdx += 1
             torch.cuda.empty_cache()
     if len(gradients) > 0:
         gradients = torch.stack(gradients)
         if N > step:
-            torch.save(gradients, f"{cache}_dir/{kdx//step}.pth")
+            if save:
+                torch.save(gradients, f"{cache}_dir/{kdx//step}.pth")
 
     # Returns a directory name if we have too many gradients
     if N > step:
         gradients = f"{cache}_dir"
     
     # Caching part 2
-    if cache is not None:
+    if save and (cache is not None):
         filedata = {}
         if os.path.exists(cache):
             filedata = torch.load(cache, weights_only=False)
@@ -113,7 +116,7 @@ def get_gradients(X, model, loss_fn, device, overwrite=True, cache=None):
     The collection of gradients as a 2D torch tensor, each row being one of the gradients
     """
     gradients = []
-    for grad in yield_gradients(X, model, loss_fn, device, overwrite, cache):
+    for grad in yield_gradients(X, model, loss_fn, device, overwrite=overwrite, cache=cache):
         if len(gradients) >= 50 or isinstance(gradients, str):
             gradients = f"{cache}_dir"
             continue
