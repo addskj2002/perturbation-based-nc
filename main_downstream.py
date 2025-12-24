@@ -49,6 +49,7 @@ def get_args_parser():
 
     # Dataset name
     parser.add_argument('--dataset', type=str)
+    parser.add_argument('--eval-train', action='store_true')
 
     # Task type
     parser.add_argument('--task', type=str)
@@ -65,10 +66,10 @@ def main(args):
     embedding_model = get_model(args.filename, args.ssl, args.arch)
     embedding_model.eval()
     datasets = get_dataset(
-        args.ssl, args.pretrain, [(args.dataset, True), (args.dataset, False)]
+        args.ssl, args.pretrain, [(args.dataset, True), (args.dataset, args.eval_train)]
     )
     train_X, train_y = datasets[args.dataset, True]
-    test_X, test_y = datasets[args.dataset, False]
+    test_X, test_y = datasets[args.dataset, args.eval_train]
     if args.pretrain == "cifar100":
         train_y = COARSE_LABELS[train_y]
         test_y = COARSE_LABELS[test_y]
