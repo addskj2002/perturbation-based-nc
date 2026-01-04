@@ -2,8 +2,12 @@
 import torch
 
 def compute_cosine_distance(X, Y):
-    X_normalized = X / X.norm(dim=1, keepdim=True).clamp(min=1e-8)
-    Y_normalized = Y / Y.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    X_norm = X.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    Y_norm = Y.norm(dim=1, keepdim=True).clamp(min=1e-8)
+    X_norm[X_norm.isinf()] = torch.nan
+    Y_norm[Y_norm.isinf()] = torch.nan
+    X_normalized = X / X_norm
+    Y_normalized = Y / Y_norm
     dist = 1 - Y_normalized @ X_normalized.T
     return dist.clamp(min=0)
 

@@ -45,8 +45,14 @@ def compute_ll_uncertainty(X, Y, n_clusters=20, max_iters=30, metric='cosine'):
 def compute_nc_uncertainty(Xs, Ys, k=100, metric='cosine'):
     N = len(Xs)
     M = Ys[0].shape[0]
-    knn_idxs = [compute_knn_idxs(X, Y, k=k, metric=metric) for X, Y in tqdm(zip(Xs, Ys))]
-    return torch.tensor([sum([
+    knn_idxs = []
+    valid = torch.tensor([True for _ in range(M)])
+    for X, Y in tqdm(zip(Xs, Ys)):
+        distances = compute_distance(X, Y, metric=metric).squeeze(0)
+        valid = valid & ~distances.isnan().any(dim=1).to("cpu")
+        _, single_knn_idxs = torch.topk(distances, k=k, largest=False, dim=1)
+        knn_idxs.append([set(idxs.tolist()) for idxs in single_knn_idxs])
+    ret = torch.tensor([sum([
         (
             len(knn_idxs[kdx][jdx].intersection(knn_idxs[idx][jdx])) /
             len(knn_idxs[kdx][jdx].union(knn_idxs[idx][jdx]))
@@ -54,6 +60,10 @@ def compute_nc_uncertainty(Xs, Ys, k=100, metric='cosine'):
         for idx in range(N)
         for kdx in range(idx+1, N)
     ]) / (N * (N - 1) / 2) for jdx in range(M)])
+    ret[~valid] = torch.nan
+    print(ret)
+    print(ret.isnan().any(), ret.isinf().any())
+    return ret
 
 if __name__ == "__main__":
     pass
