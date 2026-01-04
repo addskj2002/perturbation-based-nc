@@ -70,7 +70,7 @@ def main(args):
     np.random.seed(args.seed)
     ref_idx = np.random.choice(N_PRETRAIN[args.pretrain], size=args.n_ref, replace=False)
     Xs = [
-        infer(model, dataset[args.pretrain, True][0].to(device))[ref_idx]
+        infer(model, dataset[args.pretrain, True][0].to(device)[ref_idx])
         for model in models
     ]
     Ys = [infer(model, dataset[args.downstream, False][0].to(device)) for model in models]
@@ -80,18 +80,14 @@ def main(args):
             k_list = json.load(f)
     print("Computing uncertainties")
     uncertainties = {
-        'norm': compute_norm_uncertainty(Ys[0]),
-        # 'll': {
-        #     metric: compute_ll_uncertainty(Xs[0], Ys[0], metric=metric)
-        #     for metric in METRICS
-        # },
+        'norm': [compute_norm_uncertainty(Y) for Y in Ys],
         'fv': {
             metric: compute_fv_uncertainty(Ys, metric=metric)
             for metric in METRICS
         },
         'dist': {
             metric: {
-                k: compute_dist_uncertainty(Xs[0], Ys[0], k=k, metric=metric)
+                k: [compute_dist_uncertainty(X, Y, k=k, metric=metric) for X, Y in zip(Xs, Ys)]
                 for k in k_list
             }
             for metric in METRICS
