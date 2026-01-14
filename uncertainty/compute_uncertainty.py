@@ -39,8 +39,6 @@ def compute_nc_uncertainty(Xs, Ys, k=100, metric='cosine'):
         for kdx in range(idx+1, N)
     ]) / (N * (N - 1) / 2) for jdx in range(M)])
     ret[~valid] = torch.nan
-    print(ret)
-    print(ret.isnan().any(), ret.isinf().any())
     return ret
 
 if __name__ == "__main__":
