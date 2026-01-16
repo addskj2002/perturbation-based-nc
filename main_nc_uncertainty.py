@@ -87,6 +87,6 @@ def main(args):
     
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Uncertainty quantification test script', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('Computing NC script', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)

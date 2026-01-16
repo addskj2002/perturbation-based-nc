@@ -47,6 +47,6 @@ def main(args):
     
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Downstream evaluation script', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('Dataset generation script', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)
